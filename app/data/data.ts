@@ -6,7 +6,7 @@ type Video = {
 
 const videos:Video[] = [
     {
-     nome: "Enjoy the silence",
+     nome: "Enjoy the Silence",
      url: "./videos/Enjoy_the_silence.mp4",
      artista: "Depeche Mode"  
     }
