@@ -13,7 +13,7 @@ export default function Home() {
   const [current, setCurrent] = useState<number>(0);
 
   const currentVideo = videos[0];
-  useEffect(() => {
+ useEffect(() => {
     const video = videoRef.current;
 
     if (video) {
@@ -71,26 +71,33 @@ export default function Home() {
   };
 
   const formatTime = (t: number) => {
+    if (!t || isNaN(t)) return "0:00";
     const m = Math.floor(t / 60);
     const s = Math.floor(t % 60);
     return `${m}:${s < 10 ? "0" + s : s}`;
   };
 
   return (
-    <div className="bg-[#0f1316] flex items-center justify-center h-screen text-white">
-      <div className="bg-[#202830] h-screen w-[40%] flex justify-center items-center">
-        <div className="h-screen w-[90%] flex flex-col items-center justify-center">
+    <div className="bg-[#0f1316] flex items-center justify-center min-h-screen text-white p-4">
+      <div className="bg-[#202830] w-full max-w-[500px] md:w-[40%] min-h-screen md:min-h-[600px] flex justify-center items-center">
+        <div className="w-full px-4 flex flex-col items-center justify-center">
 
           <video
             ref={videoRef}
             src={currentVideo.url}
+            preload="metadata"
             className="w-full"
           />
 
-          <h1 className="text-white text-[16px] font-bold mt-4">{currentVideo.nome}</h1>
-          <h3 className="text-gray-400 text-[12px] font-bold mt-1">{currentVideo.artista}</h3>
+          <h1 className="text-white text-[16px] font-bold mt-4 text-center">
+            {currentVideo.nome}
+          </h1>
 
-          <div className="w-[60%] mt-4">
+          <h3 className="text-gray-400 text-[12px] font-bold mt-1 text-center">
+            {currentVideo.artista}
+          </h3>
+
+          <div className="w-full max-w-[350px] mt-4">
             <input
               type="range"
               min="0"
@@ -103,12 +110,11 @@ export default function Home() {
 
             <div className="flex justify-between text-[12px] text-gray-400 mt-1">
               <span>{formatTime(current)}</span>
-              <h3>{`${formatTime(duration)}`}</h3>
+              <h3>{formatTime(duration)}</h3>
             </div>
           </div>
 
-          
-          <div className="flex items-center justify-between w-[80%] mt-4">
+          <div className="flex items-center justify-between w-full max-w-[350px] mt-4">
             <button onClick={volta10}>
               <FastForward className="scale-x-[-1]" />
             </button>
@@ -124,8 +130,8 @@ export default function Home() {
               <FastForward />
             </button>
           </div>
-          
-          <div className="flex items-center justify-between w-[80%] mt-4">
+
+          <div className="flex items-center justify-between w-full max-w-[350px] mt-4">
             <button onClick={mutar}>
               {volume === 0 ? <VolumeX /> : <Volume2 />}
             </button>
@@ -135,7 +141,7 @@ export default function Home() {
               min="0"
               max="1"
               step="0.01"
-              className="cursor-pointer w-[100px] accent-[#ff302e]"
+              className="cursor-pointer w-[120px] accent-[#ff302e]"
               value={volume}
               onChange={(e) => mudarVolume(Number(e.target.value))}
             />

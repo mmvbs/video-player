@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "Video Player",
   description: "um simples reprodutor de vídeo feito com Next.js",
   icons: {
-    icon: "/monitor-play.ico",
+    icon: "./monitor-play.ico",
   },
 };
 
