@@ -1,65 +1,150 @@
-import Image from "next/image";
+'use client';
+
+import { useRef, useState, useEffect } from "react";
+import { Play, Pause, Volume2, VolumeX, FastForward } from "lucide-react";
+import videos from "./data/data";
 
 export default function Home() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [volume, setVolume] = useState(0.5);
+  const [prevVolume, setPrevVolume] = useState(0.5);
+  const [duration, setDuration] = useState<number>(0);
+  const [current, setCurrent] = useState<number>(0);
+
+  const currentVideo = videos[0];
+  useEffect(() => {
+    const video = videoRef.current;
+
+    if (video) {
+      video.volume = volume;
+      setDuration(video.duration);
+
+      video.ontimeupdate = () => {
+        setCurrent(video.currentTime);
+      };
+    }
+  }, []);
+
+  const playPause = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isPlaying) {
+      video.pause();
+    } else {
+      video.play();
+    }
+
+    setIsPlaying(!isPlaying);
+  };
+
+  const mudarVolume = (value: number) => {
+    setVolume(value);
+    if (videoRef.current) {
+      videoRef.current.volume = value;
+    }
+  };
+
+  const mutar = () => {
+    if (volume > 0) {
+      setPrevVolume(volume);
+      mudarVolume(0);
+    } else {
+      mudarVolume(prevVolume);
+    }
+  };
+
+  const configTime = (value: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = value;
+      setCurrent(value);
+    }
+  };
+
+  const avanca10 = () => {
+    if (videoRef.current) videoRef.current.currentTime += 10;
+  };
+
+  const volta10 = () => {
+    if (videoRef.current) videoRef.current.currentTime -= 10;
+  };
+
+  const formatTime = (t: number) => {
+    const m = Math.floor(t / 60);
+    const s = Math.floor(t % 60);
+    return `${m}:${s < 10 ? "0" + s : s}`;
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="bg-[#0f1316] flex items-center justify-center h-screen text-white">
+      <div className="bg-[#202830] h-screen w-[40%] flex justify-center items-center">
+        <div className="h-screen w-[90%] flex flex-col items-center justify-center">
+
+          <video
+            ref={videoRef}
+            src={currentVideo.url}
+            className="w-full"
+          />
+
+          <h1 className="text-white text-[16px] font-bold mt-4">{currentVideo.nome}</h1>
+          <h3 className="text-gray-400 text-[12px] font-bold mt-1">{currentVideo.artista}</h3>
+
+          <div className="w-[60%] mt-4">
+            <input
+              type="range"
+              min="0"
+              max={duration}
+              step="0.01"
+              className="cursor-pointer w-full accent-[#ff302e]"
+              value={current}
+              onChange={(e) => configTime(Number(e.target.value))}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+            <div className="flex justify-between text-[12px] text-gray-400 mt-1">
+              <span>{formatTime(current)}</span>
+              <h3>{`${formatTime(duration)}`}</h3>
+            </div>
+          </div>
+
+          
+          <div className="flex items-center justify-between w-[80%] mt-4">
+            <button onClick={volta10}>
+              <FastForward className="scale-x-[-1]" />
+            </button>
+
+            <button
+              onClick={playPause}
+              className="text-white w-[40px] h-[40px] rounded-full bg-[#ff302e] flex items-center justify-center"
+            >
+              {isPlaying ? <Pause /> : <Play />}
+            </button>
+
+            <button onClick={avanca10}>
+              <FastForward />
+            </button>
+          </div>
+          
+          <div className="flex items-center justify-between w-[80%] mt-4">
+            <button onClick={mutar}>
+              {volume === 0 ? <VolumeX /> : <Volume2 />}
+            </button>
+
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              className="cursor-pointer w-[100px] accent-[#ff302e]"
+              value={volume}
+              onChange={(e) => mudarVolume(Number(e.target.value))}
+            />
+
+            <span className="text-gray-300">{Math.round(volume * 100)}%</span>
+          </div>
+
         </div>
-      </main>
+      </div>
     </div>
   );
 }
