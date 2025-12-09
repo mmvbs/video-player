@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from "react";
-import { Play, Pause, Volume2, VolumeX, FastForward } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, FastForward, StepForward } from "lucide-react";
 import videos from "./data/data";
 
 export default function Home() {
@@ -11,39 +11,98 @@ export default function Home() {
   const [prevVolume, setPrevVolume] = useState(0.5);
   const [duration, setDuration] = useState<number>(0);
   const [current, setCurrent] = useState<number>(0);
+  const [index, setIndex] = useState<number>(0);
+  const [serverDurations, setServerDurations] = useState<Record<string, number>>({});
 
-  const currentVideo = videos[0];
- useEffect(() => {
-    const video = videoRef.current;
+  const currentVideo = videos[index];
 
-    if (video) {
-      video.volume = volume;
-      setDuration(video.duration);
-
-      video.ontimeupdate = () => {
-        setCurrent(video.currentTime);
-      };
-    }
+  useEffect(() => {
+    fetch("/api/durations")
+      .then(res => res.json())
+      .then(data => {
+        setServerDurations(data);
+      });
   }, []);
+
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    setCurrent(0);
+    const handleTimeUpdate = () => {
+      if (!isNaN(video.currentTime) && isFinite(video.currentTime)) {
+        setCurrent(video.currentTime);
+      }
+    };
+
+    const handleEnded = () => {
+      configureVideo(index + 1);
+    };
+
+    const handleLoadedMetadata = () => {
+      const file = videos[index].url.split("/").pop() || "";
+      const dur = serverDurations[file];
+
+      if (dur) {
+        setDuration(dur);
+      } else {
+        setDuration(video.duration || 0);
+      }
+    };
+
+    video.addEventListener("timeupdate", handleTimeUpdate);
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
+    video.addEventListener("ended", handleEnded);
+
+    return () => {
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      video.removeEventListener("ended", handleEnded);
+    };
+  }, [index, serverDurations]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.load();
+    }
+  }, [index]);
+
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = volume;
+    }
+  }, [volume]);
+
+  const configureVideo = (index: number) => {
+    const video = videoRef.current;
+    if (video){
+      video.pause();
+      video.currentTime = 0;
+      video.load();
+    }
+
+    setIsPlaying(false);
+    setCurrent(0);
+    setDuration(0);
+
+    const novoindice = index % videos.length;
+    setIndex(novoindice);
+  };
 
   const playPause = () => {
     const video = videoRef.current;
     if (!video) return;
 
-    if (isPlaying) {
-      video.pause();
-    } else {
-      video.play();
-    }
+    if (isPlaying) video.pause();
+    else video.play();
 
     setIsPlaying(!isPlaying);
   };
 
   const mudarVolume = (value: number) => {
     setVolume(value);
-    if (videoRef.current) {
-      videoRef.current.volume = value;
-    }
   };
 
   const mutar = () => {
@@ -58,7 +117,6 @@ export default function Home() {
   const configTime = (value: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime = value;
-      setCurrent(value);
     }
   };
 
@@ -70,18 +128,38 @@ export default function Home() {
     if (videoRef.current) videoRef.current.currentTime -= 10;
   };
 
+  const proximoVideo = () => {
+    configureVideo(index + 1);
+  };
+
+  const videoAnterior = () => {
+    const novoindice = index === 0 ? videos.length - 1 : index - 1;
+    configureVideo(novoindice);
+  };
+
   const formatTime = (t: number) => {
-    if (!t || isNaN(t)) return "0:00";
+    if (!t || isNaN(t) || !isFinite(t)) return "0:00";
     const m = Math.floor(t / 60);
     const s = Math.floor(t % 60);
     return `${m}:${s < 10 ? "0" + s : s}`;
   };
 
   return (
-    <div className="bg-[#0f1316] flex items-center justify-center min-h-screen text-white p-4">
-      <div className="bg-[#202830] w-full max-w-[500px] md:w-[40%] min-h-screen md:min-h-[600px] flex justify-center items-center">
-        <div className="w-full px-4 flex flex-col items-center justify-center">
+    <div className="bg-[#0f1316] flex items-center justify-center min-h-screen text-white gap-2">
+      <div className="flex flex-col gap-2 w-full md:w-[300px] max-h-[440px] bg-[rgb(32,40,48)] p-2 rounded-[10px]">
+        {videos.map((video, i) => (
+          <button
+            key={video.url}
+            className="text-white flex"
+            onClick={() => configureVideo(i)}
+          >
+            {video.nome} - {video.artista}
+          </button>
+        ))}
+      </div>
 
+      <div className="bg-[#202830] w-full max-w-[500px] md:w-[40%] min-h-screen md:min-h-[600px] flex justify-center items-center rounded-[10px]">
+        <div className="w-full px-4 flex flex-col items-center justify-center ">
           <video
             ref={videoRef}
             src={currentVideo.url}
@@ -115,6 +193,9 @@ export default function Home() {
           </div>
 
           <div className="flex items-center justify-between w-full max-w-[350px] mt-4">
+            <button onClick={videoAnterior}>
+              <StepForward className="scale-x-[-1]" />
+            </button>
             <button onClick={volta10}>
               <FastForward className="scale-x-[-1]" />
             </button>
@@ -128,6 +209,9 @@ export default function Home() {
 
             <button onClick={avanca10}>
               <FastForward />
+            </button>
+            <button onClick={proximoVideo}>
+             <StepForward />
             </button>
           </div>
 
